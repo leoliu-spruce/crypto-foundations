@@ -27,7 +27,9 @@ After this chapter you should be able to:
   SD-JWT in a different encoding;
 - explain how an mdoc is bound to a device and to a session;
 - distinguish **device retrieval** from **server retrieval**, and say why the offline case is
-  the whole reason mdoc exists.
+  the whole reason mdoc exists;
+- say what a **doctype** consists of, and explain why verification is doctype-agnostic while
+  schema, trust anchors and display are not.
 
 ---
 
@@ -278,7 +280,113 @@ with **OID4VP** — which carries mdoc as one of its supported formats. That is
 
 ---
 
-## 18.7 Mapping mdoc onto what you already know
+## 18.7 Arbitrary doctypes
+
+The mDL is one doctype. The container was designed to carry others, and the work of
+supporting them is almost entirely *not* cryptographic.
+
+Start with a concrete observation about verification. To check an mdoc a verifier
+validates the `issuerAuth` `COSE_Sign1` against a trust anchor, recomputes the digest of
+each `IssuerSignedItem`, compares those against `valueDigests` in the MSO, checks
+`validityInfo` against the current time, and checks `deviceAuth` against the
+`SessionTranscript`. Read that list again and notice what every step operates on: salts,
+digests, signatures, and timestamps. Not one of them needs to know that `birth_date` is a
+date or that `portrait` holds a JPEG.
+
+The `docType` string itself takes part in exactly one check. The value in the MSO must
+equal the value the verifier asked for. It is compared, never interpreted.
+
+**So a correctly built mdoc verification core is doctype-agnostic for free.** If it can
+verify an mDL it can verify anything, and adding a doctype requires no new cryptographic
+code. That is the most useful thing to know in this section.
+
+### What a doctype actually is
+
+Four things, none of them cryptographic:
+
+- a **docType string** in reverse-DNS form, such as `org.iso.18013.5.1.mDL`;
+- one or more **namespaces**, also reverse-DNS, such as `org.iso.18013.5.1`;
+- a set of **element identifiers** within each namespace, each with a CBOR type and
+  encoding rules;
+- **policy**: which elements are mandatory, and which are derived age attestations of the
+  `age_over_NN` kind from §18.2.
+
+Some doctypes in real deployment:
+
+| docType | Defined by | What it is |
+|---|---|---|
+| `org.iso.18013.5.1.mDL` | ISO/IEC 18013-5 | Mobile driving licence |
+| `org.iso.23220.photoID.1` | ISO/IEC 23220-4 | Generic photo identity document |
+| `eu.europa.ec.eudi.pid.1` | EUDI ARF | EU Person Identification Data |
+
+As with every identifier in this chapter, treat those strings as things to spot-check
+against the current specification rather than as quotable fact.
+
+### Where doctype knowledge is genuinely needed
+
+Outside the verification core, five places need it, and all five are schema or policy
+rather than cryptography.
+
+| Concern | What it needs to know |
+|---|---|
+| Element schema | That `birth_date` is CBOR tag 1004 (full-date), `portrait` a byte string, `driving_privileges` an array of maps |
+| Trust anchors | Which IACA roots are valid for this doctype and this issuing jurisdiction |
+| Request building | The namespace and element identifiers a verifier must name to ask for data |
+| Display | The mapping from element identifiers to human labels, per language |
+| Policy | Mandatory elements, and which age attestations to prefer over a raw date |
+
+The design conclusion follows directly from that table. Keep the verification core
+generic and push all five concerns into a **doctype descriptor** that is data rather than
+code: the docType string, its namespaces, and per element an identifier, a CBOR type, a
+display label, and a mandatory flag. Load descriptors from configuration.
+
+The failure mode to avoid is a `match` on `docType` somewhere inside the verification
+path. That is what turns "support a new doctype" from a configuration change into a
+release.
+
+This separation is not new either. The W3C side makes the same split with different
+machinery: `@context` and `type` do the work of `docType`, and the JSON-LD contexts of
+Chapter 10 do the work of the descriptor. A generic proof layer over a swappable
+vocabulary layer, in both universes.
+
+### Two cautions
+
+**There is no authoritative registry.** ISO maintains some doctypes, AAMVA the US ones,
+the European Commission the EUDI ones, but nothing here plays the role IANA plays for
+media types. Reverse-DNS naming is the whole collision-avoidance mechanism, so anyone can
+mint `com.example.something.1` under a domain they control. It works the way DID methods
+in Chapter 9 work, and a doctype you mint is a permanent commitment in exactly the way
+that chapter warns an identifier format is.
+
+**Minting a doctype is easy; interop is the hard part.** The value in
+`org.iso.18013.5.1.mDL` is not its format but the fact that a large number of deployed
+verifiers already recognize the string. A doctype only you recognize is a private format
+wearing ISO ceremony. That is often fine for a closed loop between an issuer and verifier
+you both control, and usually a mistake for anything else.
+
+### Where to read
+
+The **ISO/IEC 23220 series** is the direct answer at specification level. It factors the
+generic mobile-eID building blocks out of 18013-5, so the container stops being "the mDL
+specification that happens to generalize", and Part 4 defines a photo ID doctype as a
+worked example of a non-mDL one. Paywalled, like 18013-5.
+
+Three free sources are worth the time. The **AAMVA mDL Implementation Guidelines**
+(aamva.org) cover the `org.iso.18013.5.1.aamva` namespace, which is a real second
+namespace layered onto an existing doctype. The **EUDI Wallet Architecture and Reference
+Framework**, developed in the open on GitHub, specifies `eu.europa.ec.eudi.pid.1` in
+public, so you can watch a whole non-mDL doctype being defined. And **OpenID4VP**
+(openid.net) supplies the protocol half: the `mso_mdoc` credential format, and DCQL
+queries that select on doctype, which Chapter 20 covers.
+
+For code, `spruceid/isomdl` and the OpenWallet Foundation's `identity-credential` are the
+two mature open implementations. Reading either with this section's question in mind is
+the fastest way to see how cleanly the generic core is separated from mDL specifics in
+practice.
+
+---
+
+## 18.8 Mapping mdoc onto what you already know
 
 | mdoc concept | You already know it as | Chapter |
 |---|---|---|
@@ -320,6 +428,9 @@ learn, it is the first thing re-encoded** — with one genuinely different desig
   without disclosing a birth date.
 - Offline **device retrieval** encrypts the session; online presentation is generally done via
   **OID4VP**.
+- A **doctype** is a reverse-DNS string, its namespaces, its element identifiers and their
+  types, and its policy. Verification never interprets it, so supporting arbitrary doctypes
+  is a schema and trust-anchor problem, not a cryptographic one.
 
 ---
 

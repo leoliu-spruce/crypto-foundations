@@ -1,15 +1,15 @@
 # Cryptography for Verifiable Credentials
 
-### Course notes for the `ssi` library
+### Notes on the `ssi` library
 
 These notes teach the cryptography and data formats behind the [`ssi`](../README.md)
 library from the ground up. **No prior knowledge of cryptography is assumed.** If you
 know what a byte is and can read a little code, you can read these notes.
 
-The notes are written in the spirit of a university course: each chapter has learning
-goals, worked examples drawn from this repository's actual source code, and exercises.
-You are meant to read them in order — each chapter builds on the previous one — but
-every chapter also stands alone well enough to be used as a reference.
+Each chapter has learning goals, worked examples drawn from this repository's actual
+source code, and exercises. You are meant to read them in order, since each chapter
+builds on the previous one, but every chapter also stands alone well enough to be used
+as a reference.
 
 ---
 
@@ -103,6 +103,19 @@ but the ideas transfer to any system.
 | 16 | [The verification pipeline](16-verification-pipeline.md) | An end-to-end trace through `ssi`'s traits, claims validity vs. proof validity |
 | 17 | [Threats and pitfalls](17-threats-and-pitfalls.md) | A checklist of real attacks and the code that stops them |
 
+### Part VII — The wider ecosystem
+
+Chapters 0–17 are anchored to `ssi` source you can click through and check. These three
+are not: they cover formats and protocols `ssi` does not implement, and were written
+from working knowledge of the specifications. The structure is reliable, but verify
+exact field and parameter names against the version your team targets.
+
+| Chapter | Title | Key ideas |
+|---|---|---|
+| 18 | [mdoc and mDL](18-mdoc-and-mdl.md) | ISO/IEC 18013-5, `IssuerSigned` and `DeviceSigned`, the Mobile Security Object, why it is a separate universe from W3C VCs |
+| 19 | [OID4VCI](19-oid4vci.md) | Getting a credential into a wallet: four endpoints, authorization code vs. pre-authorized code, proof of possession |
+| 20 | [OID4VP](20-oid4vp.md) | Getting a credential out of a wallet: `vp_token`, Presentation Exchange vs. DCQL, same-device vs. cross-device, verifier authentication |
+
 ### Reference
 
 - [Glossary](glossary.md) — every term, one line each.
@@ -161,4 +174,3 @@ cryptography. The single most important lesson in the whole set is Chapter 3's:
 
 Everything else in the stack — proof purposes, status lists, challenges, key binding —
 exists to close one of the gaps that sentence leaves open.
-# crypto-foundations
