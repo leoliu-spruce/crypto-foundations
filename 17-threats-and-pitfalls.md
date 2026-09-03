@@ -1,6 +1,6 @@
 # Chapter 17: Threats and pitfalls
 
-> [Table of contents](README.md) · Previous: [Chapter 16](16-verification-pipeline.md) · [Glossary](glossary.md)
+> [Table of contents](README.md) · Previous: [Chapter 16](16-verification-pipeline.md) · Next: [Chapter 18: mdoc and mDL](18-mdoc-and-mdl.md) · [Glossary](glossary.md)
 
 ## Learning goals
 
